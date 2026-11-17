@@ -78,6 +78,8 @@ def main() -> None:
     mayor_ca_raw = load_csv(out_dir / "mayor_candidates.csv")
     councilor_ov_raw = load_csv(out_dir / "councilor_overview.csv")
     councilor_ca_raw = load_csv(out_dir / "councilor_candidates.csv")
+    ref_nat_raw = load_csv(out_dir / "nuclear_referendum_national.csv")
+    ref_cnt_raw = load_csv(out_dir / "nuclear_referendum_counties.csv")
 
     mayor_overview = [
         {
@@ -158,6 +160,29 @@ def main() -> None:
         for r in councilor_ca_raw
     ]
 
+    def parse_ref_rows(raw_rows: list[dict[str, str]]) -> list[dict]:
+        return [
+            {
+                "year": r["年度"],
+                "date": r["投票日期"],
+                "case_no": to_int(r["案號"]),
+                "name": r["簡稱"],
+                "result": r["審定結果"],
+                "area": r["地區"],
+                "voters": to_int(r["投票權人數"]),
+                "votes": to_int(r["投票數"]),
+                "valid": to_int(r["有效票數"]),
+                "invalid": to_int(r["無效票數"]),
+                "agree": to_int(r["同意票數"]),
+                "agree_pct": to_pct(r["同意率(%)"]),
+                "disagree": to_int(r["不同意票數"]),
+                "disagree_pct": to_pct(r["不同意率(%)"]),
+                "turnout_pct": to_pct(r["投票率(%)"]),
+                "threshold_pct": to_pct(r["同意票佔投票權人(%)"]),
+            }
+            for r in raw_rows
+        ]
+
     payload = {
         "meta": {
             "years": YEARS,
@@ -169,6 +194,10 @@ def main() -> None:
         "mayorCandidates": mayor_candidates,
         "councilorOverview": councilor_overview,
         "councilorCandidates": councilor_candidates,
+        "referendums": {
+            "national": parse_ref_rows(ref_nat_raw),
+            "counties": parse_ref_rows(ref_cnt_raw),
+        },
     }
 
     js_path = docs_dir / "data.js"

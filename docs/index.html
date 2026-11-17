@@ -327,6 +327,45 @@
     .badge-info { background: var(--surface-alt); color: var(--ink); border: 1px solid var(--border); }
     .badge-win { background: var(--dpp-bg); color: #166534; border: 1px solid #bbf7d0; }
     .badge-inc { background: var(--kmt-bg); color: #1e40af; border: 1px solid #bfdbfe; }
+    .badge-fail { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .ref-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 900px) {
+      .ref-kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .ref-kpi-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .ref-kpi-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .ref-kpi-stats strong {
+      display: block;
+      font-size: 14px;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
 
     .card-note {
       font-size: 12.5px;
@@ -470,8 +509,9 @@
       <div class="tab-buttons">
         <button class="tab-btn active" data-view="charts">圖表總覽與分析</button>
         <button class="tab-btn" data-view="tables">候選人與選區明細表</button>
+        <button class="tab-btn" data-view="referendum">核電公投專區（2018–2025）</button>
       </div>
-      <div class="filter-controls">
+      <div class="filter-controls" id="electionFilterControls">
         <div class="filter-group" id="yearFilters">
           <span class="filter-label">年度：</span>
           <button class="btn-filter active" data-year="all">全部三屆</button>
@@ -639,9 +679,97 @@
       </section>
     </div>
 
+    <!-- VIEW 3: NUCLEAR REFERENDUMS -->
+    <div id="viewReferendum" class="hidden">
+      <section class="ref-kpi-grid" id="refKpiGrid"></section>
+
+      <div class="section-heading">
+        <span>一、全國核電公投門檻與投票率對比</span>
+        <span class="sub">依據《公民投票法》，須同時滿足「同意票多於不同意票」且「同意票達投票權人總額 25% 以上」</span>
+      </div>
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <h3 class="card-title">歷次全國核電公投核心指標比較（2018 / 2021 / 2025）</h3>
+          </div>
+          <span class="card-note">同意率、投票率與 25% 法定門檻達成比例（%）</span>
+        </div>
+        <div class="chart-box" id="chartRefNational"></div>
+        <div class="chart-caption">
+          <strong>門檻關鍵解讀：</strong>2025 年第 21 案（核三延役）同意率雖高達 <strong>74.17%</strong>，但因單獨舉行使投票率僅 <strong>29.53%</strong>，換算「同意票佔投票權人總額」為 <strong>21.70%</strong>，未跨過 25%（5,000,523 票）法定門檻而不通過；反觀 2018 年第 16 案合併九合一選舉投票率達 54.83%，同意票佔總額 <strong>29.84%</strong> 而順利過關。
+        </div>
+      </section>
+
+      <div class="section-heading">
+        <span>二、各縣市核電公投態度與動能比較</span>
+        <div class="filter-group" id="refScopeFilters">
+          <button class="btn-filter active" data-refscope="six">僅看六都</button>
+          <button class="btn-filter" data-refscope="all">全台 22 縣市</button>
+        </div>
+      </div>
+      <section class="charts-grid">
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <h3 class="card-title">各縣市同意率比較（%）</h3>
+            </div>
+            <span class="card-note" id="noteRefAgree">依 2025 核三延役同意率由高至低排列</span>
+          </div>
+          <div class="chart-box" id="chartRefAgree" style="height: 440px;"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <div class="card-title-wrap">
+              <h3 class="card-title">各縣市投票率比較（%）</h3>
+            </div>
+            <span class="card-note">對比合併大選（2018）與單獨公投（2021、2025）動能落差</span>
+          </div>
+          <div class="chart-box" id="chartRefTurnout" style="height: 440px;"></div>
+        </section>
+      </section>
+
+      <div class="section-heading">
+        <span>三、22 縣市公投明細查詢</span>
+        <span class="sub" id="refTableCount"></span>
+      </div>
+      <section class="card">
+        <div class="table-controls">
+          <div class="filter-group" id="refCaseFilters">
+            <button class="btn-filter active" data-refcase="all">全部三案</button>
+            <button class="btn-filter" data-refcase="16">2018 第16案（以核養綠）</button>
+            <button class="btn-filter" data-refcase="17">2021 第17案（重啟核四）</button>
+            <button class="btn-filter" data-refcase="21">2025 第21案（核三延役）</button>
+          </div>
+          <input class="search-input" id="refSearchInput" type="text" placeholder="搜尋縣市名稱（如：屏東縣、臺北市）..." />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>年度</th>
+                <th>案別</th>
+                <th>地區</th>
+                <th class="num">投票權人數</th>
+                <th class="num">投票率</th>
+                <th class="num">同意票數</th>
+                <th class="num">同意率</th>
+                <th class="num">不同意票數</th>
+                <th class="num">不同意率</th>
+                <th class="num">同意佔總選舉人</th>
+              </tr>
+            </thead>
+            <tbody id="refTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
     <footer class="notes">
       <div>
         資料來源：<a href="https://vote.nccu.edu.tw/cec/cechead.asp" target="_blank" rel="noopener">國立政治大學選舉研究中心歷屆公職選舉資料庫</a>
+        、
+        <a href="https://db.cec.gov.tw/" target="_blank" rel="noopener">中央選舉委員會選舉資料庫（歷年公民投票）</a>
       </div>
     </footer>
   </div>
@@ -655,7 +783,10 @@
       year: "all",
       city: "all",
       tableType: "councilor",
-      search: ""
+      search: "",
+      refScope: "six",
+      refCase: "all",
+      refSearch: ""
     };
 
     const charts = {};
@@ -1208,6 +1339,176 @@
         .join("");
     }
 
+    const SIX_MUNIS = ["臺北市", "新北市", "桃園市", "臺中市", "臺南市", "高雄市"];
+
+    function renderReferendumKPIs() {
+      const rows = D.referendums.national;
+      document.getElementById("refKpiGrid").innerHTML = rows
+        .map((r) => {
+          const badgeCls = r.result === "通過" ? "badge-win" : "badge-fail";
+          return `
+          <div class="kpi-card">
+            <div class="ref-kpi-meta">
+              <span class="kpi-title">${r.date}｜第 ${r.case_no} 案</span>
+              <span class="badge ${badgeCls}">${r.result}</span>
+            </div>
+            <div class="kpi-value">${r.name}</div>
+            <div class="ref-kpi-stats">
+              <div><span>同意率</span><strong>${r.agree_pct}%</strong></div>
+              <div><span>投票率</span><strong>${r.turnout_pct}%</strong></div>
+              <div><span>佔總選舉人</span><strong>${r.threshold_pct}%</strong></div>
+            </div>
+            <div class="kpi-sub" style="margin-top:8px;">同意 ${fmtNum(r.agree)} 票 ／ 不同意 ${fmtNum(r.disagree)} 票</div>
+          </div>`;
+        })
+        .join("");
+    }
+
+    function renderRefNational() {
+      const rows = D.referendums.national;
+      const labels = rows.map((r) => `${r.year} ${r.name}`);
+
+      getChart("chartRefNational").setOption(
+        {
+          textStyle: COMMON_TEXT_STYLE,
+          tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0 },
+          grid: { top: 28, left: 48, right: 24, bottom: 52 },
+          xAxis: { type: "category", data: labels },
+          yAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%" } },
+          series: [
+            {
+              name: "同意率（有效票）",
+              type: "bar",
+              barMaxWidth: 42,
+              itemStyle: { color: "#1d4ed8" },
+              data: rows.map((r) => r.agree_pct)
+            },
+            {
+              name: "投票率",
+              type: "bar",
+              barMaxWidth: 42,
+              itemStyle: { color: "#78716c" },
+              data: rows.map((r) => r.turnout_pct)
+            },
+            {
+              name: "同意票佔投票權人（門檻 25%）",
+              type: "bar",
+              barMaxWidth: 42,
+              itemStyle: { color: "#15803d" },
+              data: rows.map((r) => r.threshold_pct),
+              markLine: {
+                silent: true,
+                symbol: "none",
+                lineStyle: { color: "#991b1b", type: "dashed", width: 2 },
+                label: { formatter: "25% 法定門檻", position: "insideEndTop", color: "#991b1b", fontWeight: 700 },
+                data: [{ yAxis: 25 }]
+              }
+            }
+          ]
+        },
+        true
+      );
+    }
+
+    function renderRefCounties() {
+      const allRows = D.referendums.counties;
+      const cases = [
+        { case_no: 16, label: "2018 以核養綠", color: "#0891b2" },
+        { case_no: 17, label: "2021 重啟核四", color: "#d97706" },
+        { case_no: 21, label: "2025 核三延役", color: "#1d4ed8" }
+      ];
+
+      let areas = Array.from(new Set(allRows.map((r) => r.area)));
+      if (state.refScope === "six") {
+        areas = areas.filter((a) => SIX_MUNIS.includes(a));
+      }
+
+      // Sort by 2025 (case 21) agree_pct ascending (so highest appears at top of horizontal bar)
+      areas.sort((a, b) => {
+        const ra = allRows.find((r) => r.case_no === 21 && r.area === a);
+        const rb = allRows.find((r) => r.case_no === 21 && r.area === b);
+        return (ra ? ra.agree_pct : 0) - (rb ? rb.agree_pct : 0);
+      });
+
+      const agreeSeries = cases.map((c) => ({
+        name: c.label,
+        type: "bar",
+        itemStyle: { color: c.color },
+        data: areas.map((area) => {
+          const row = allRows.find((r) => r.case_no === c.case_no && r.area === area);
+          return row ? row.agree_pct : 0;
+        })
+      }));
+
+      getChart("chartRefAgree").setOption(
+        {
+          textStyle: COMMON_TEXT_STYLE,
+          tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0 },
+          grid: { top: 14, left: 72, right: 20, bottom: 48 },
+          xAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%" } },
+          yAxis: { type: "category", data: areas, axisLabel: { fontSize: 11.5 } },
+          series: agreeSeries
+        },
+        true
+      );
+
+      const turnoutSeries = cases.map((c) => ({
+        name: c.label,
+        type: "bar",
+        itemStyle: { color: c.color },
+        data: areas.map((area) => {
+          const row = allRows.find((r) => r.case_no === c.case_no && r.area === area);
+          return row ? row.turnout_pct : 0;
+        })
+      }));
+
+      getChart("chartRefTurnout").setOption(
+        {
+          textStyle: COMMON_TEXT_STYLE,
+          tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0 },
+          grid: { top: 14, left: 72, right: 20, bottom: 48 },
+          xAxis: { type: "value", max: 80, axisLabel: { formatter: "{value}%" } },
+          yAxis: { type: "category", data: areas, axisLabel: { fontSize: 11.5 } },
+          series: turnoutSeries
+        },
+        true
+      );
+    }
+
+    function renderRefTable() {
+      const q = state.refSearch.trim().toLowerCase();
+      const filtered = D.referendums.counties.filter((r) =>
+        (state.refCase === "all" || String(r.case_no) === state.refCase) &&
+        (!q || r.area.toLowerCase().includes(q) || r.name.toLowerCase().includes(q))
+      );
+
+      document.getElementById("refTableCount").textContent = `共 ${filtered.length} 筆資料`;
+      document.getElementById("refTableBody").innerHTML = filtered
+        .map((r) => `<tr>
+          <td>${r.year}</td>
+          <td>第 ${r.case_no} 案（${r.name}）</td>
+          <td><strong>${r.area}</strong></td>
+          <td class="num">${fmtNum(r.voters)}</td>
+          <td class="num">${r.turnout_pct}%</td>
+          <td class="num">${fmtNum(r.agree)}</td>
+          <td class="num"><strong>${r.agree_pct}%</strong></td>
+          <td class="num">${fmtNum(r.disagree)}</td>
+          <td class="num">${r.disagree_pct}%</td>
+          <td class="num">${r.threshold_pct}%</td>
+        </tr>`)
+        .join("");
+    }
+
+    function renderReferendumAll() {
+      renderReferendumKPIs();
+      renderRefNational();
+      renderRefCounties();
+      renderRefTable();
+    }
+
     function renderAll() {
       renderKPIs();
       renderMayorParty();
@@ -1220,6 +1521,7 @@
       renderAge();
       renderCoattail();
       renderTable();
+      renderReferendumAll();
     }
 
     document.querySelectorAll("[data-view]").forEach((btn) => {
@@ -1229,10 +1531,35 @@
         state.view = btn.dataset.view;
         document.getElementById("viewCharts").classList.toggle("hidden", state.view !== "charts");
         document.getElementById("viewTables").classList.toggle("hidden", state.view !== "tables");
-        if (state.view === "charts") {
+        document.getElementById("viewReferendum").classList.toggle("hidden", state.view !== "referendum");
+        document.getElementById("electionFilterControls").classList.toggle("hidden", state.view === "referendum");
+        if (state.view === "charts" || state.view === "referendum") {
           setTimeout(resizeAllCharts, 20);
         }
       });
+    });
+
+    document.querySelectorAll("[data-refscope]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-refscope]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.refScope = btn.dataset.refscope;
+        renderRefCounties();
+      });
+    });
+
+    document.querySelectorAll("[data-refcase]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-refcase]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.refCase = btn.dataset.refcase;
+        renderRefTable();
+      });
+    });
+
+    document.getElementById("refSearchInput").addEventListener("input", (e) => {
+      state.refSearch = e.target.value;
+      renderRefTable();
     });
 
     document.querySelectorAll("#yearFilters .btn-filter").forEach((btn) => {
