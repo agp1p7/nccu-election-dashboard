@@ -276,6 +276,8 @@
       border-radius: 2px;
       padding: 18px 20px;
       margin-bottom: 18px;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .charts-grid section.card {
@@ -1099,8 +1101,8 @@
             }
           },
           legend: { bottom: 0 },
-          grid: { top: 28, left: 52, right: 24, bottom: 56 },
-          xAxis: { type: "value", name: "市長得票率 (%)", nameLocation: "middle", nameGap: 24 },
+          grid: { top: 28, left: 52, right: 24, bottom: 70 },
+          xAxis: { type: "value", name: "市長得票率 (%)", nameLocation: "middle", nameGap: 26 },
           yAxis: { type: "value", name: "議員總得票率 (%)" },
           series: targetParties.map((party) => ({
             name: party,
