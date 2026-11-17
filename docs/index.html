@@ -338,6 +338,20 @@
       height: 360px;
     }
 
+    .chart-caption {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--surface-alt);
+      border-left: 2px solid var(--ink);
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .chart-caption strong {
+      color: var(--ink);
+    }
+
     .table-controls {
       display: flex;
       flex-wrap: wrap;
@@ -590,6 +604,9 @@
             <span class="card-note" id="noteCoattail"></span>
           </div>
           <div class="chart-box" id="chartCoattail"></div>
+          <div class="chart-caption">
+            <strong>判讀說明：</strong>每個點代表一組「年度 × 直轄市 × 政黨」（僅納有提名市長候選人之國、民、眾三黨）。若點群呈左下往右上排列且相關係數 <strong>r</strong> 接近 1，代表「母雞（市長）」與「小雞（議員）」得票連動強；<strong>偏右下</strong>表示市長個人跨黨吸票強但議員未跟上，<strong>偏左上</strong>則反映市長較弱勢但議員基本盤穩固（分裂投票）。
+          </div>
         </section>
       </section>
     </div>
