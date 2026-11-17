@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>臺灣六都選舉數據分析儀表板（2014–2022）</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="data.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #0f4c81;
+      --accent-soft: #e0f2fe;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff;
+      padding: 28px 24px 24px;
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    header p {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 0.92rem;
+    }
+
+    .filter-bar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+    }
+
+    .filter-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .btn-pill {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-pill.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    main {
+      padding: 24px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .kpi-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .kpi-title {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .kpi-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin: 28px 0 14px;
+      padding-left: 10px;
+      border-left: 4px solid var(--accent);
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    @media (max-width: 960px) {
+      .chart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .card-note {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .chart-box {
+      width: 100%;
+      height: 360px;
+    }
+
+    .table-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .search-input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      min-width: 240px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 460px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    th, td {
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    th {
+      background: #f8fafc;
+      position: sticky;
+      top: 0;
+      font-weight: 600;
+      color: var(--muted);
+      z-index: 1;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-win {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-inc {
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    .party-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      padding: 28px 16px 40px;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>臺灣六都選舉數據分析儀表板（2014–2022）</h1>
+      <p>資料來源：國立政治大學選舉研究中心歷屆公職選舉資料庫｜涵蓋直轄市長與直轄市議員近三屆完整統計</p>
+    </div>
+  </header>
+
+  <div class="filter-bar">
+    <div class="filter-inner">
+      <div class="filter-group" id="yearFilters">
+        <span class="filter-label">年度：</span>
+        <button class="btn-pill active" data-year="all">全部三屆</button>
+        <button class="btn-pill" data-year="2022">2022</button>
+        <button class="btn-pill" data-year="2018">2018</button>
+        <button class="btn-pill" data-year="2014">2014</button>
+      </div>
+      <div class="filter-group" id="cityFilters">
+        <span class="filter-label">直轄市：</span>
+        <button class="btn-pill active" data-city="all">六都全部</button>
+        <button class="btn-pill" data-city="台北市">台北市</button>
+        <button class="btn-pill" data-city="新北市">新北市</button>
+        <button class="btn-pill" data-city="桃園市">桃園市</button>
+        <button class="btn-pill" data-city="臺中市">臺中市</button>
+        <button class="btn-pill" data-city="臺南市">臺南市</button>
+        <button class="btn-pill" data-city="高雄市">高雄市</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <section class="kpi-grid" id="kpiGrid"></section>
+
+    <h2 class="section-title">一、政黨版圖與席次消長</h2>
+    <section class="chart-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">直轄市長政黨得票率結構</h3>
+          <span class="card-note" id="noteMayorParty"></span>
+        </div>
+        <div class="chart-box" id="chartMayorParty"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">直轄市議員政黨當選席次分佈</h3>
+          <span class="card-note" id="noteCouncilorSeats"></span>
+        </div>
+        <div class="chart-box" id="chartCouncilorSeats"></div>
+      </div>
+      <div class="card" style="grid-column: 1 / -1;">
+        <div class="card-header">
+          <h3 class="card-title">直轄市議員政黨總得票率跨屆趨勢（2014 → 2018 → 2022）</h3>
+          <span class="card-note" id="noteCouncilorTrend">依目前所選直轄市計算各黨總得票佔有效票比例</span>
+        </div>
+        <div class="chart-box" id="chartCouncilorTrend"></div>
+      </div>
+    </section>
+
+    <h2 class="section-title">二、投票率與選區競爭強度</h2>
+    <section class="chart-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">六都投票率跨屆比較（市長選舉）</h3>
+          <span class="card-note">2014、2018、2022 各都投票率（%）</span>
+        </div>
+        <div class="chart-box" id="chartTurnout"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">議員選區競爭強度與無效票率</h3>
+          <span class="card-note">各都平均當選率（席次 / 候選人）與無效票率</span>
+        </div>
+        <div class="chart-box" id="chartCompetition"></div>
+      </div>
+    </section>
+
+    <h2 class="section-title">三、候選人結構與連任優勢</h2>
+    <section class="chart-grid">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">現任連任優勢 vs 非現任當選率</h3>
+          <span class="card-note">比較「現任」與「非現任」之當選成功率（%）</span>
+        </div>
+        <div class="chart-box" id="chartIncumbent"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">議員性別比例跨屆趨勢（女性佔比）</h3>
+          <span class="card-note">女性候選人佔比 vs 女性當選人佔比（%）</span>
+        </div>
+        <div class="chart-box" id="chartGender"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">議員候選人與當選人年齡層分佈</h3>
+          <span class="card-note">以「選舉年度 − 出生年次」計算參選年齡</span>
+        </div>
+        <div class="chart-box" id="chartAge"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">母雞帶小雞效應：市長 vs 同黨議員得票率</h3>
+          <span class="card-note" id="noteCoattail"></span>
+        </div>
+        <div class="chart-box" id="chartCoattail"></div>
+      </div>
+    </section>
+
+    <h2 class="section-title">四、候選人明細查詢</h2>
+    <section class="card">
+      <div class="table-controls">
+        <button class="btn-pill active" data-table="councilor">直轄市議員候選人</button>
+        <button class="btn-pill" data-table="mayor">直轄市長候選人</button>
+        <input class="search-input" id="searchInput" type="text" placeholder="搜尋姓名、政黨或選區..." />
+        <span class="card-note" id="tableCount"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr id="tableHead"></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    資料來源：<a href="https://vote.nccu.edu.tw/cec/cechead.asp" target="_blank" rel="noopener">國立政治大學選舉研究中心歷屆公職選舉資料庫</a>
+    ｜本頁面為純靜態網頁，可直接部署至 GitHub Pages
+  </footer>
+
+  <script>
+    const D = window.ELECTION_DATA;
+    const { years: YEARS, cities: CITIES, partyOrder: PARTY_ORDER, partyColors: PARTY_COLORS } = D.meta;
+
+    const state = {
+      year: "all",
+      city: "all",
+      tableType: "councilor",
+      search: ""
+    };
+
+    const charts = {};
+    function getChart(id) {
+      if (!charts[id]) {
+        charts[id] = echarts.init(document.getElementById(id));
+      }
+      return charts[id];
+    }
+
+    window.addEventListener("resize", () => {
+      Object.values(charts).forEach((c) => c.resize());
+    });
+
+    function fmtNum(n) {
+      return n.toLocaleString("zh-TW");
+    }
+
+    function filterByState(rows) {
+      return rows.filter((r) =>
+        (state.year === "all" || r.year === state.year) &&
+        (state.city === "all" || r.city === state.city)
+      );
+    }
+
+    function renderKPIs() {
+      const mOv = filterByState(D.mayorOverview);
+      const mCa = filterByState(D.mayorCandidates);
+      const cCa = filterByState(D.councilorCandidates);
+
+      const latestYear = state.year === "all" ? "2022" : state.year;
+      const latestVoters = D.mayorOverview
+        .filter((r) => r.year === latestYear && (state.city === "all" || r.city === state.city))
+        .reduce((s, r) => s + r.voters, 0);
+
+      const totalVotes = mOv.reduce((s, r) => s + r.votes, 0);
+      const totalVoters = mOv.reduce((s, r) => s + r.voters, 0);
+      const avgTurnout = totalVoters ? ((totalVotes / totalVoters) * 100).toFixed(2) : "0.00";
+
+      const cWins = cCa.filter((r) => r.elected).length;
+      const cInc = cCa.filter((r) => r.incumbent);
+      const cIncWin = cInc.filter((r) => r.elected).length;
+      const cIncRate = cInc.length ? ((cIncWin / cInc.length) * 100).toFixed(1) : "0.0";
+
+      const mInc = mCa.filter((r) => r.incumbent);
+      const mIncWin = mInc.filter((r) => r.elected).length;
+      const mIncRate = mInc.length ? ((mIncWin / mInc.length) * 100).toFixed(1) : "-";
+
+      const cards = [
+        {
+          title: `${latestYear} 選舉人數`,
+          value: fmtNum(latestVoters),
+          sub: state.city === "all" ? "六都合計合格選民數" : `${state.city}合格選民數`
+        },
+        {
+          title: "市長平均投票率",
+          value: `${avgTurnout}%`,
+          sub: `涵蓋 ${mOv.length} 場次／區間平均`
+        },
+        {
+          title: "議員參選 / 當選席次",
+          value: `${fmtNum(cWins)} / ${fmtNum(cCa.length)}`,
+          sub: cCa.length ? `整體當選率 ${((cWins / cCa.length) * 100).toFixed(1)}%` : "無資料"
+        },
+        {
+          title: "議員現任連任成功率",
+          value: `${cIncRate}%`,
+          sub: `市長現任連任率：${mIncRate === "-" ? "無現任參選" : mIncRate + "%"} (${mIncWin}/${mInc.length})`
+        }
+      ];
+
+      document.getElementById("kpiGrid").innerHTML = cards
+        .map(
+          (c) => `
+          <div class="kpi-card">
+            <div class="kpi-title">${c.title}</div>
+            <div class="kpi-value">${c.value}</div>
+            <div class="kpi-sub">${c.sub}</div>
+          </div>`
+        )
+        .join("");
+    }
+
+    function renderMayorParty() {
+      const targetYear = state.year === "all" ? "2022" : state.year;
+      const singleCity = state.city !== "all";
+      const xLabels = singleCity ? YEARS : CITIES;
+
+      document.getElementById("noteMayorParty").textContent = singleCity
+        ? `${state.city} 2014–2022 各黨得票率（%）`
+        : `${targetYear} 年六都各黨得票率（%）`;
+
+      const series = PARTY_ORDER.map((party) => {
+        const data = xLabels.map((label) => {
+          const rows = D.mayorCandidates.filter((r) =>
+            singleCity
+              ? r.city === state.city && r.year === label && r.party === party
+              : r.year === targetYear && r.city === label && r.party === party
+          );
+          const sumPct = rows.reduce((s, r) => s + r.pct, 0);
+          return Number(sumPct.toFixed(2));
+        });
+        return {
+          name: party,
+          type: "bar",
+          stack: "total",
+          itemStyle: { color: PARTY_COLORS[party] },
+          data
+        };
+      }).filter((s) => s.data.some((v) => v > 0));
+
+      getChart("chartMayorParty").setOption(
+        {
+          tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+          legend: { bottom: 0, type: "scroll" },
+          grid: { top: 20, left: 46, right: 16, bottom: 48 },
+          xAxis: { type: "category", data: xLabels },
+          yAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%" } },
+          series
+        },
+        true
+      );
+    }
+
+    function renderCouncilorSeats() {
+      const targetYear = state.year === "all" ? "2022" : state.year;
+      const singleCity = state.city !== "all";
+      const xLabels = singleCity ? YEARS : CITIES;
+
+      document.getElementById("noteCouncilorSeats").textContent = singleCity
+        ? `${state.city} 2014–2022 議會席次分佈`
+        : `${targetYear} 年六都議會席次分佈`;
+
+      const series = PARTY_ORDER.map((party) => {
+        const data = xLabels.map((label) =>
+          D.councilorCandidates.filter((r) =>
+            r.elected &&
+            r.party === party &&
+            (singleCity ? r.city === state.city && r.year === label : r.year === targetYear && r.city === label)
+          ).length
+        );
+        return {
+          name: party,
+          type: "bar",
+          stack: "seats",
+          itemStyle: { color: PARTY_COLORS[party] },
+          data
+        };
+      }).filter((s) => s.data.some((v) => v > 0));
+
+      getChart("chartCouncilorSeats").setOption(
+        {
+          tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+          legend: { bottom: 0, type: "scroll" },
+          grid: { top: 20, left: 42, right: 16, bottom: 48 },
+          xAxis: { type: "category", data: xLabels },
+          yAxis: { type: "value", name: "席次" },
+          series
+        },
+        true
+      );
+    }
+
+    function renderCouncilorTrend() {
+      const series = PARTY_ORDER.map((party) => {
+        const data = YEARS.map((yr) => {
+          const validVotes = D.councilorOverview
+            .filter((r) => r.year === yr && (state.city === "all" || r.city === state.city))
+            .reduce((s, r) => s + r.valid, 0);
+          const partyVotes = D.councilorCandidates
+            .filter((r) => r.year === yr && r.party === party && (state.city === "all" || r.city === state.city))
+            .reduce((s, r) => s + r.votes, 0);
+          return validVotes ? Number(((partyVotes / validVotes) * 100).toFixed(2)) : 0;
+        });
+        return {
+          name: party,
+          type: "line",
+          smooth: true,
+          symbolSize: 8,
+          itemStyle: { color: PARTY_COLORS[party] },
+          data
+        };
+      });
+
+      getChart("chartCouncilorTrend").setOption(
+        {
+          tooltip: { trigger: "axis", valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0, type: "scroll" },
+          grid: { top: 20, left: 48, right: 24, bottom: 48 },
+          xAxis: { type: "category", data: YEARS },
+          yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
+          series
+        },
+        true
+      );
+    }
+
+    function renderTurnout() {
+      const activeCities = state.city === "all" ? CITIES : [state.city];
+      const cityColors = ["#0f4c81", "#2563eb", "#0891b2", "#059669", "#d97706", "#dc2626"];
+
+      const series = activeCities.map((city, idx) => ({
+        name: city,
+        type: "line",
+        smooth: false,
+        symbolSize: 8,
+        itemStyle: { color: cityColors[idx % cityColors.length] },
+        data: YEARS.map((yr) => {
+          const row = D.mayorOverview.find((r) => r.year === yr && r.city === city);
+          return row ? row.turnout : null;
+        })
+      }));
+
+      getChart("chartTurnout").setOption(
+        {
+          tooltip: { trigger: "axis", valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0, type: "scroll" },
+          grid: { top: 20, left: 48, right: 20, bottom: 48 },
+          xAxis: { type: "category", data: YEARS },
+          yAxis: { type: "value", min: 50, max: 80, axisLabel: { formatter: "{value}%" } },
+          series
+        },
+        true
+      );
+    }
+
+    function renderCompetition() {
+      const targetYear = state.year === "all" ? "2022" : state.year;
+      const singleCity = state.city !== "all";
+      const xLabels = singleCity ? YEARS : CITIES;
+
+      const winRates = [];
+      const invalidRates = [];
+
+      xLabels.forEach((label) => {
+        const rows = D.councilorOverview.filter((r) =>
+          singleCity ? r.city === state.city && r.year === label : r.year === targetYear && r.city === label
+        );
+        const cand = rows.reduce((s, r) => s + r.cand, 0);
+        const win = rows.reduce((s, r) => s + r.win, 0);
+        const votes = rows.reduce((s, r) => s + r.votes, 0);
+        const invalid = rows.reduce((s, r) => s + r.invalid, 0);
+        winRates.push(cand ? Number(((win / cand) * 100).toFixed(2)) : 0);
+        invalidRates.push(votes ? Number(((invalid / votes) * 100).toFixed(2)) : 0);
+      });
+
+      getChart("chartCompetition").setOption(
+        {
+          tooltip: { trigger: "axis", valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0 },
+          grid: { top: 24, left: 48, right: 48, bottom: 48 },
+          xAxis: { type: "category", data: xLabels },
+          yAxis: [
+            { type: "value", name: "當選率", axisLabel: { formatter: "{value}%" } },
+            { type: "value", name: "無效票率", axisLabel: { formatter: "{value}%" } }
+          ],
+          series: [
+            { name: "平均當選率", type: "bar", data: winRates, itemStyle: { color: "#3b82f6" } },
+            { name: "無效票率", type: "line", yAxisIndex: 1, data: invalidRates, itemStyle: { color: "#ef4444" } }
+          ]
+        },
+        true
+      );
+    }
+
+    function renderIncumbent() {
+      const mCa = filterByState(D.mayorCandidates);
+      const cCa = filterByState(D.councilorCandidates);
+
+      function rate(arr, isInc) {
+        const sub = arr.filter((r) => r.incumbent === isInc);
+        if (!sub.length) return 0;
+        return Number(((sub.filter((r) => r.elected).length / sub.length) * 100).toFixed(1));
+      }
+
+      getChart("chartIncumbent").setOption(
+        {
+          tooltip: { trigger: "axis", valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0 },
+          grid: { top: 24, left: 48, right: 20, bottom: 48 },
+          xAxis: { type: "category", data: ["直轄市長", "直轄市議員"] },
+          yAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%" } },
+          series: [
+            {
+              name: "現任連任率",
+              type: "bar",
+              barMaxWidth: 48,
+              itemStyle: { color: "#0f4c81" },
+              data: [rate(mCa, true), rate(cCa, true)]
+            },
+            {
+              name: "非現任當選率",
+              type: "bar",
+              barMaxWidth: 48,
+              itemStyle: { color: "#94a3b8" },
+              data: [rate(mCa, false), rate(cCa, false)]
+            }
+          ]
+        },
+        true
+      );
+    }
+
+    function renderGender() {
+      const candFemalePct = [];
+      const winFemalePct = [];
+
+      YEARS.forEach((yr) => {
+        const rows = D.councilorCandidates.filter(
+          (r) => r.year === yr && (state.city === "all" || r.city === state.city)
+        );
+        const fCand = rows.filter((r) => r.gender === "F").length;
+        const wins = rows.filter((r) => r.elected);
+        const fWin = wins.filter((r) => r.gender === "F").length;
+        candFemalePct.push(rows.length ? Number(((fCand / rows.length) * 100).toFixed(1)) : 0);
+        winFemalePct.push(wins.length ? Number(((fWin / wins.length) * 100).toFixed(1)) : 0);
+      });
+
+      getChart("chartGender").setOption(
+        {
+          tooltip: { trigger: "axis", valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0 },
+          grid: { top: 24, left: 48, right: 20, bottom: 48 },
+          xAxis: { type: "category", data: YEARS },
+          yAxis: { type: "value", max: 50, axisLabel: { formatter: "{value}%" } },
+          series: [
+            { name: "女性候選人佔比", type: "bar", barMaxWidth: 42, itemStyle: { color: "#ec4899" }, data: candFemalePct },
+            { name: "女性當選人佔比", type: "bar", barMaxWidth: 42, itemStyle: { color: "#8b5cf6" }, data: winFemalePct }
+          ]
+        },
+        true
+      );
+    }
+
+    function renderAge() {
+      const cCa = filterByState(D.councilorCandidates).filter((r) => r.birth > 1900);
+      const bins = [
+        { label: "34歲以下", min: 0, max: 34 },
+        { label: "35–44歲", min: 35, max: 44 },
+        { label: "45–54歲", min: 45, max: 54 },
+        { label: "55–64歲", min: 55, max: 64 },
+        { label: "65歲以上", min: 65, max: 120 }
+      ];
+
+      function dist(rows) {
+        const total = rows.length || 1;
+        return bins.map((b) => {
+          const cnt = rows.filter((r) => {
+            const age = Number(r.year) - r.birth;
+            return age >= b.min && age <= b.max;
+          }).length;
+          return Number(((cnt / total) * 100).toFixed(1));
+        });
+      }
+
+      getChart("chartAge").setOption(
+        {
+          tooltip: { trigger: "axis", valueFormatter: (v) => `${v}%` },
+          legend: { bottom: 0 },
+          grid: { top: 24, left: 48, right: 20, bottom: 48 },
+          xAxis: { type: "category", data: bins.map((b) => b.label) },
+          yAxis: { type: "value", axisLabel: { formatter: "{value}%" } },
+          series: [
+            { name: "全體候選人", type: "bar", itemStyle: { color: "#64748b" }, data: dist(cCa) },
+            { name: "當選人", type: "bar", itemStyle: { color: "#10b981" }, data: dist(cCa.filter((r) => r.elected)) }
+          ]
+        },
+        true
+      );
+    }
+
+    function renderCoattail() {
+      const targetParties = ["國民黨", "民進黨", "民眾黨"];
+      const pointsByParty = { 國民黨: [], 民進黨: [], 民眾黨: [] };
+      const allPts = [];
+
+      YEARS.forEach((yr) => {
+        if (state.year !== "all" && state.year !== yr) return;
+        CITIES.forEach((city) => {
+          if (state.city !== "all" && state.city !== city) return;
+          const validVotes = D.councilorOverview
+            .filter((r) => r.year === yr && r.city === city)
+            .reduce((s, r) => s + r.valid, 0);
+          if (!validVotes) return;
+
+          targetParties.forEach((party) => {
+            const mayorPct = D.mayorCandidates
+              .filter((r) => r.year === yr && r.city === city && r.party === party)
+              .reduce((s, r) => s + r.pct, 0);
+            if (mayorPct <= 0) return;
+
+            const cRows = D.councilorCandidates.filter(
+              (r) => r.year === yr && r.city === city && r.party === party
+            );
+            const cVotes = cRows.reduce((s, r) => s + r.votes, 0);
+            const cSeats = cRows.filter((r) => r.elected).length;
+            const cPct = Number(((cVotes / validVotes) * 100).toFixed(2));
+            const pt = [Number(mayorPct.toFixed(2)), cPct, city, yr, party, cSeats];
+            pointsByParty[party].push(pt);
+            allPts.push(pt);
+          });
+        });
+      });
+
+      // Pearson correlation r
+      let rText = "樣本數不足";
+      if (allPts.length >= 3) {
+        const xs = allPts.map((p) => p[0]);
+        const ys = allPts.map((p) => p[1]);
+        const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+        const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+        let num = 0, dx = 0, dy = 0;
+        for (let i = 0; i < xs.length; i++) {
+          num += (xs[i] - mx) * (ys[i] - my);
+          dx += (xs[i] - mx) ** 2;
+          dy += (ys[i] - my) ** 2;
+        }
+        const rVal = dx && dy ? num / Math.sqrt(dx * dy) : 0;
+        rText = `樣本 ${allPts.length} 筆｜皮爾森相關係數 r = ${rVal.toFixed(3)}`;
+      }
+      document.getElementById("noteCoattail").textContent = rText;
+
+      getChart("chartCoattail").setOption(
+        {
+          tooltip: {
+            trigger: "item",
+            formatter: (p) => {
+              const [mx, cy, city, yr, party, seats] = p.data;
+              return `<b>${yr} ${city}（${party}）</b><br/>市長得票率：${mx}%<br/>議員總得票率：${cy}%<br/>議員當選席次：${seats} 席`;
+            }
+          },
+          legend: { bottom: 0 },
+          grid: { top: 24, left: 52, right: 24, bottom: 48 },
+          xAxis: { type: "value", name: "市長得票率 (%)", nameLocation: "middle", nameGap: 26 },
+          yAxis: { type: "value", name: "議員總得票率 (%)" },
+          series: targetParties.map((party) => ({
+            name: party,
+            type: "scatter",
+            symbolSize: 12,
+            itemStyle: { color: PARTY_COLORS[party] },
+            data: pointsByParty[party]
+          }))
+        },
+        true
+      );
+    }
+
+    function renderTable() {
+      const isMayor = state.tableType === "mayor";
+      const base = isMayor ? filterByState(D.mayorCandidates) : filterByState(D.councilorCandidates);
+      const q = state.search.trim().toLowerCase();
+
+      const filtered = base
+        .filter((r) => {
+          if (!q) return true;
+          return (
+            r.name.toLowerCase().includes(q) ||
+            r.raw_party.toLowerCase().includes(q) ||
+            r.city.toLowerCase().includes(q) ||
+            (r.const && r.const.toLowerCase().includes(q))
+          );
+        })
+        .sort((a, b) => b.votes - a.votes);
+
+      const shown = filtered.slice(0, 100);
+      document.getElementById("tableCount").textContent =
+        `共 ${fmtNum(filtered.length)} 筆符合，顯示前 ${shown.length} 筆（依得票數排序）`;
+
+      const headCols = isMayor
+        ? ["年度", "直轄市", "姓名", "推薦政黨", "得票數", "得票率", "狀態"]
+        : ["年度", "直轄市", "選區", "姓名", "推薦政黨", "得票數", "得票率", "狀態"];
+
+      document.getElementById("tableHead").innerHTML = headCols.map((h) => `<th>${h}</th>`).join("");
+      document.getElementById("tableBody").innerHTML = shown
+        .map((r) => {
+          const badges = [
+            r.elected ? '<span class="badge badge-win">當選</span>' : "",
+            r.incumbent ? '<span class="badge badge-inc">現任</span>' : ""
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const partyCell = `<span class="party-dot" style="background:${PARTY_COLORS[r.party]}"></span>${r.raw_party}`;
+          if (isMayor) {
+            return `<tr>
+              <td>${r.year}</td><td>${r.city}</td><td><b>${r.name}</b></td>
+              <td>${partyCell}</td><td>${fmtNum(r.votes)}</td><td>${r.pct}%</td><td>${badges || "-"}</td>
+            </tr>`;
+          }
+          return `<tr>
+            <td>${r.year}</td><td>${r.city}</td><td>${r.const}</td><td><b>${r.name}</b></td>
+            <td>${partyCell}</td><td>${fmtNum(r.votes)}</td><td>${r.pct}%</td><td>${badges || "-"}</td>
+          </tr>`;
+        })
+        .join("");
+    }
+
+    function renderAll() {
+      renderKPIs();
+      renderMayorParty();
+      renderCouncilorSeats();
+      renderCouncilorTrend();
+      renderTurnout();
+      renderCompetition();
+      renderIncumbent();
+      renderGender();
+      renderAge();
+      renderCoattail();
+      renderTable();
+    }
+
+    document.querySelectorAll("#yearFilters .btn-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#yearFilters .btn-pill").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.year = btn.dataset.year;
+        renderAll();
+      });
+    });
+
+    document.querySelectorAll("#cityFilters .btn-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#cityFilters .btn-pill").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.city = btn.dataset.city;
+        renderAll();
+      });
+    });
+
+    document.querySelectorAll("[data-table]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-table]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.tableType = btn.dataset.table;
+        renderTable();
+      });
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      state.search = e.target.value;
+      renderTable();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
